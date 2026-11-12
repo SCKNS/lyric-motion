@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lyric Motion — Lyric Video Studio</title>
+<meta name="description" content="Browser-based lyric video studio: turn song lyrics into vertical (9:16) or horizontal (16:9) music videos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&family=Unbounded:wght@500&family=Sora:wght@600&family=Anton&family=Fraunces:ital,wght@1,500&family=Archivo+Black&family=Bricolage+Grotesque:wght@800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script>
+(function(){ var r = document.documentElement, t = null, f = null;
+  try { t = localStorage.getItem('kls_theme'); } catch(e){}
+  if (t !== 'dark' && t !== 'light'){ var h = r.getAttribute('data-theme'); t = (h === 'dark' || h === 'light') ? h : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+  r.setAttribute('data-ui', t);
+  try { f = JSON.parse(localStorage.getItem('kls_fmt')); } catch(e){}
+  r.setAttribute('data-fmt', f === 'h' ? 'h' : 'v');
+})();
+</script>
+</head>
+<body>
+<div class="top">
+  <div class="brandline">
+    <h1 class="wordmark"><span class="led" aria-hidden="true"></span>Lyric Motion</h1>
+    <p>Şarkı sözlerinden dikey ya da yatay müzik videosu. Beş adımı sırayla izle.</p>
+  </div>
+  <button id="themeToggle" class="theme" type="button" aria-label="Koyu temaya geç" title="Koyu temaya geç">
+    <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>
+    <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+  </button>
+</div>
+
+<div class="wrap">
+  <div class="steps">
+    <section class="step">
+      <h2><span class="num">1</span>Şarkı</h2>
+      <p>Şarkının mp3 dosyasını seç. Yanında yeşil <b>Hazır</b> yazısı çıkınca devam et.</p>
+      <div class="file"><label class="pick" for="audioFile">Şarkı dosyası seç</label><input id="audioFile" class="vh" type="file" accept="audio/*,.mp3,.m4a,.wav"><span id="audioStatus" class="status">Şarkı seçilmedi</span></div>
+      <p>Şarkının sadece bir kısmını kullanacaksan başlangıç ve bitişi <b>dakika:saniye</b> olarak yaz, örneğin <code>1:52</code>. Boş kalırsa şarkının tamamı kullanılır.</p>
+      <div class="row">
+        <label>Başlangıç<input id="clipStart" type="text" placeholder="ör. 1:52"></label>
+        <label>Bitiş<input id="clipEnd" type="text" placeholder="ör. 2:34"></label>
+      </div>
+      <p id="clipMsg" class="status" hidden></p>
+      <p class="tip">Dosya yalnızca senin tarayıcında çalınır, hiçbir yere yüklenmez. Ritim otomatik algılanır.</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">2</span>Sözler</h2>
+      <p>Örnek satırları sil, sözleri yaz. <b>Her satır videoda ayrı bir ekran olur.</b></p>
+      <textarea id="lyrics" spellcheck="false" aria-label="Şarkı sözleri"></textarea>
+      <p class="tip">Bir kelimeyi vurgulamak için iki yanına yıldız koy: <code>*kelime*</code></p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">3</span>Format ve stil</h2>
+      <p>Videonun yönünü seç. Tüm stiller iki formatta da çalışır; yazı boyutu ve sahne düzeni formata göre yeniden kurulur.</p>
+      <div class="fmts" role="group" aria-label="Video formatı">
+        <button type="button" class="fmt" id="fmtV" data-fmt="v" aria-pressed="true"><span class="ar ar-v" aria-hidden="true"></span><span class="fl"><b>Dikey 9:16</b><small>1080×1920 · Reels, TikTok, Shorts</small></span></button>
+        <button type="button" class="fmt" id="fmtH" data-fmt="h" aria-pressed="false"><span class="ar ar-h" aria-hidden="true"></span><span class="fl"><b>Yatay 16:9</b><small>1920×1080 · YouTube, sunum</small></span></button>
+      </div>
+      <p>Her stilin kendi arka plan animasyonu var, yazılar her satırda farklı bir efektle gelir.</p>
+      <div class="tpls" id="tpls"></div>
+      <p id="tplTip" class="tip" hidden>Bu stil sözleri kelime kelime, ritimle getirir. Zamanlamada yine sadece satır başlarına dokun. Kısa satırlarda (2–6 kelime) en iyi sonucu verir; <code>*yıldızlı*</code> kelime en büyük yazılır.</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">4</span>Zamanlama</h2>
+      <p>Her satırın videoda ne zaman çıkacağını belirle.</p>
+      <div class="choices">
+        <div class="choice rec">
+          <b>Dokunarak (önerilen)</b>
+          <span>Şarkı çalar, sıradaki satır ekranda yazar. Satır söylenmeye başlayınca ekrana dokun.</span>
+          <button id="tapStart" class="primary">Dokunarak zamanla</button>
+        </div>
+        <div class="choice">
+          <b>Otomatik</b>
+          <span>Satırları şarkıya tek tıkla yayar. Hızlıdır ama tam oturmayabilir.</span>
+          <button id="autoBtn">Otomatik yerleştir</button>
+        </div>
+      </div>
+      <p id="timeMsg" class="status" hidden></p>
+      <details>
+        <summary>Gelişmiş ayarlar</summary>
+        <div class="adv">
+          <b>Efektler müzikle uyumsuz mu?</b>
+          <p>Efektler müzikten belirgin şekilde daha sık ya da seyrek atıyorsa düzelt. Müziğin hızı değişmez.</p>
+          <div class="row"><button id="bpmHalf" type="button">Efektleri seyrekleştir</button><button id="bpmDouble" type="button">Efektleri sıklaştır</button></div>
+          <p id="bpmVal" class="status">Şarkı yüklenince otomatik ayarlanır.</p>
+        </div>
+        <div class="adv">
+          <b>Satır zamanlarını elle düzelt</b>
+          <p>Sayı, satırın kaçıncı saniyede çıktığıdır. Geç çıkıyorsa küçült, erken çıkıyorsa büyüt. 0.1 yaklaşık bir hece.</p>
+          <div class="times" id="times"></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">5</span>Dışa aktar</h2>
+      <p>Önce <b>Önizle</b> ile videoyu baştan sona izle. Video 3. adımda seçtiğin formatta kaydedilir.</p>
+      <div class="row">
+        <label>İsim filigranı (isteğe bağlı)<input id="handle" type="text" placeholder="ör. @kullaniciadi"></label>
+      </div>
+      <div id="silentRow" class="silent" hidden>
+        <label class="check"><input id="silent" type="checkbox"> Sessiz video oluştur</label>
+        <p class="tip">Şarkı videoya otomatik eklenir. Müziği Instagram ya da TikTok'un kendi müzik listesinden ekleyeceksen bunu işaretle.</p>
+      </div>
+      <div class="row">
+        <button id="recBtn" class="hot">Videoyu oluştur ve indir</button>
+      </div>
+      <p class="tip">Video tam çözünürlükte, kare kare işlenip yüksek kaliteyle kodlanır; süre şarkının uzunluğuna ve cihazına bağlı. İşlem bitene kadar <b>sekmeyi kapatma ve ekranı kilitleme</b>.</p>
+      <p id="recStatus" class="status">Hazır olduğunda butona bas.</p>
+      <a id="dlLink" class="pick" hidden>Videoyu indir</a>
+    </section>
+  </div>
+
+  <div class="monitor">
+    <div class="screen"><canvas id="cv" width="1080" height="1920" aria-label="Video önizlemesi"></canvas></div>
+    <div class="seek" id="seek" role="slider" tabindex="0" aria-label="Önizleme konumu" aria-valuemin="0" aria-valuenow="0"><div class="meter" id="meterBox"><i id="meter"></i></div><span class="knob" id="knob"></span></div>
+    <div class="mrow"><span id="tNow">0:00.0</span><span id="tLen">0:42.0</span></div>
+    <div class="transport"><button id="playBtn" class="primary"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>Önizle</button><button id="stopBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></svg>Durdur</button></div>
+    <p class="tip">Dalgaya tıklayarak istediğin ana git.</p>
+    <div class="grille" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+</div>
+
+
+<div id="tapOverlay" class="ov" role="dialog" aria-modal="true" aria-label="Dokunarak zamanlama" hidden>
+  <div class="ov-top"><span>Satır <b id="ovNum">1</b> / <span id="ovTotal">1</span></span><span id="ovTime">0:00.0</span></div>
+  <div class="ov-bar"><i id="ovBar"></i></div>
+  <div class="ov-prev" id="ovPrev"></div>
+  <button id="tapBtn" class="ov-tap wait" type="button">
+    <span class="ov-hint" id="ovHint">Hazırlan, şarkı başlıyor…</span>
+    <span class="ov-line" id="ovLine">3</span>
+    <span class="ov-cta">Şimdi dokun</span>
+  </button>
+  <div class="ov-next" id="ovNext"></div>
+  <div class="ov-bottom"><button id="undoBtn" type="button">Geri al</button><button id="tapStop" type="button">Vazgeç</button></div>
+</div>
+
+<script src="assets/app.min.js"></script>
+</body>
+</html>
